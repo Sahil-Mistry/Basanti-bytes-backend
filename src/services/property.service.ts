@@ -103,7 +103,7 @@ export async function updateProperty(
 export async function deleteProperty(id: string, userId: string): Promise<void> {
   const property = await Property.findById(id);
   if (!property) throw new Error('Property not found');
-  if (property.owner.toString() !== userId) throw new Error('Unauthorized');
+  if (property.owner && property.owner.toString() !== userId) throw new Error('Unauthorized');
 
   property.isActive = false;
   await property.save();
