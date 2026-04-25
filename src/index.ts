@@ -1,21 +1,27 @@
-import app from '../src/app';
-import { connectDB } from '../src/config/db';
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import apiRoutes from './routes';
+import { errorMiddleware } from './middleware/error.middleware';
+import { connectDB } from './config/db';
 
-// Global flag to prevent multiple DB connection attempts
-let dbConnected = false;
+const app = express();
 
-export default async (req: any, res: any) => {
-  // Connect to database on first request
-  if (!dbConnected) {
-    try {
-      await connectDB();
-      dbConnected = true;
-    } catch (err) {
-      console.error('Failed to connect to database:', err);
-      return res.status(500).json({ error: 'Database connection failed' });
-    }
-  }
+app.use(helmet());
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-  // Use Express app to handle the request
-  return app(req, res);
-};
+(async () => {
+  await connectDB();
+})()
+
+app.use('/api/v1', apiRoutes);
+
+app.use((_req, res) => {
+  res.status(404).json({ success: false, message: 'Not found' });
+});
+
+app.use(errorMiddleware);
+
+export default app;
