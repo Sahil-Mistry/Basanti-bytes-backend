@@ -1,11 +1,10 @@
-import { VercelRequest, VercelResponse } from '@vercel/node';
 import app from '../src/app';
 import { connectDB } from '../src/config/db';
 
 // Global flag to prevent multiple DB connection attempts
 let dbConnected = false;
 
-export default async (req: VercelRequest, res: VercelResponse) => {
+export default async (req: any, res: any) => {
   // Connect to database on first request
   if (!dbConnected) {
     try {
