@@ -1,11 +1,8 @@
-export type PropertyType = 'apartment' | 'villa' | 'plot' | 'commercial' | 'house';
+export type PropertyType = 'apartment' | 'villa' | 'plot' | 'commercial' | 'house' | 'Builder Floor';
 
-export interface PropertyAddress {
-  street?: string;
-  city: string;
-  state?: string;
-  country: string;
-}
+export type FurnishingType = 'Unfurnished' | 'Semi-Furnished' | 'Furnished';
+
+export type RiskLevel = 'Low' | 'Medium' | 'High';
 
 export interface GeoLocation {
   type: 'Point';

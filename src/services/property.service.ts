@@ -1,40 +1,33 @@
 import { Property, IProperty } from '../models/property.model';
 import { PropertyFilters } from '../types/property.types';
-import { geocodeAddress } from './maps.service';
 import { Types } from 'mongoose';
 
 export async function createProperty(
   data: {
+    id: string;
     title: string;
-    description?: string;
-    type: string;
+    location: string;
+    city: string;
     price: number;
-    area: number;
-    address: { street?: string; city: string; state?: string; country: string };
-    amenities?: string[];
-    images?: string[];
+    price_per_sqft: number;
+    area_sqft: number;
+    type: string;
+    bedrooms: number;
+    bathrooms: number;
+    furnishing: string;
+    age: number;
+    latitude: number;
+    longitude: number;
+    investment_score: number;
+    rental_yield: number;
+    risk_level: string;
+    location_coords: { type: string; coordinates: [number, number] };
   },
-  ownerId: string
+  ownerId?: string
 ): Promise<IProperty> {
-  const addressStr = [data.address.street, data.address.city, data.address.state, data.address.country]
-    .filter(Boolean)
-    .join(', ');
-
-  let location;
-  try {
-    const coords = await geocodeAddress(addressStr);
-    location = {
-      type: 'Point' as const,
-      coordinates: [coords.lng, coords.lat],
-    };
-  } catch (err) {
-    console.warn(`Geocoding failed: ${err}`);
-  }
-
   const property = new Property({
     ...data,
-    owner: new Types.ObjectId(ownerId),
-    location,
+    owner: ownerId ? new Types.ObjectId(ownerId) : undefined,
   });
 
   return property.save();
@@ -54,9 +47,9 @@ export async function searchProperties(filters: PropertyFilters): Promise<{
   const limit = filters.limit ?? 20;
   const skip = (page - 1) * limit;
 
-  const query: Record<string, any> = { isActive: true };
+  const query: Record<string, any> = { isActive: { $ne: false } };
 
-  if (filters.city) query['address.city'] = filters.city;
+  if (filters.city) query.city = { $regex: filters.city, $options: 'i' };
   if (filters.type) query.type = filters.type;
   if (filters.minPrice || filters.maxPrice) {
     query.price = {};
@@ -64,13 +57,13 @@ export async function searchProperties(filters: PropertyFilters): Promise<{
     if (filters.maxPrice) query.price.$lte = filters.maxPrice;
   }
   if (filters.minArea || filters.maxArea) {
-    query.area = {};
-    if (filters.minArea) query.area.$gte = filters.minArea;
-    if (filters.maxArea) query.area.$lte = filters.maxArea;
+    query.area_sqft = {};
+    if (filters.minArea) query.area_sqft.$gte = filters.minArea;
+    if (filters.maxArea) query.area_sqft.$lte = filters.maxArea;
   }
 
   if (filters.lat && filters.lng && filters.radius) {
-    query.location = {
+    query.location_coords = {
       $near: {
         $geometry: {
           type: 'Point',
@@ -101,27 +94,7 @@ export async function updateProperty(
 ): Promise<IProperty | null> {
   const property = await Property.findById(id);
   if (!property) return null;
-  if (property.owner.toString() !== userId) throw new Error('Unauthorized');
-
-  if (updates.address) {
-    const addressStr = [
-      updates.address.street,
-      updates.address.city,
-      updates.address.state,
-      updates.address.country,
-    ]
-      .filter(Boolean)
-      .join(', ');
-    try {
-      const coords = await geocodeAddress(addressStr);
-      updates.location = {
-        type: 'Point' as const,
-        coordinates: [coords.lng, coords.lat],
-      };
-    } catch (err) {
-      console.warn(`Geocoding failed: ${err}`);
-    }
-  }
+  if (property.owner && property.owner.toString() !== userId) throw new Error('Unauthorized');
 
   Object.assign(property, updates);
   return property.save();

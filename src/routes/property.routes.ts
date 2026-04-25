@@ -7,19 +7,27 @@ import { validate } from '../middleware/validate.middleware';
 const router = Router();
 
 const CreatePropertySchema = z.object({
+  id: z.string().min(1),
   title: z.string().min(1),
-  description: z.string().optional(),
-  type: z.enum(['apartment', 'villa', 'plot', 'commercial', 'house']),
+  location: z.string().min(1),
+  city: z.string().min(1),
   price: z.number().positive(),
-  area: z.number().positive(),
-  address: z.object({
-    street: z.string().optional(),
-    city: z.string().min(1),
-    state: z.string().optional(),
-    country: z.string().min(1),
+  price_per_sqft: z.number().positive(),
+  area_sqft: z.number().positive(),
+  type: z.enum(['apartment', 'villa', 'plot', 'commercial', 'house', 'Builder Floor']),
+  bedrooms: z.number().nonnegative(),
+  bathrooms: z.number().nonnegative(),
+  furnishing: z.enum(['Unfurnished', 'Semi-Furnished', 'Furnished']),
+  age: z.number().nonnegative(),
+  latitude: z.number(),
+  longitude: z.number(),
+  investment_score: z.number().min(0).max(100),
+  rental_yield: z.number().nonnegative(),
+  risk_level: z.enum(['Low', 'Medium', 'High']),
+  location_coords: z.object({
+    type: z.literal('Point'),
+    coordinates: z.tuple([z.number(), z.number()]),
   }),
-  amenities: z.array(z.string()).optional(),
-  images: z.array(z.string()).optional(),
 });
 
 const UpdatePropertySchema = CreatePropertySchema.partial();
